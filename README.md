@@ -1,6 +1,14 @@
-# AI Finance Controller
+# FinGuard AI (AI Finance Controller)
+
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-ai--finguard.netlify.app-blue?style=for-the-badge&logo=netlify)](https://ai-finguard.netlify.app/)
+[![GitHub Repo](https://img.shields.io/badge/GitHub-FinGuard--AI-black?style=for-the-badge&logo=github)](https://github.com/anjaliprasad24/FinGuard-AI)
 
 Production-ready autonomous AI Finance Controller & Copilot system built with FastAPI, Next.js 14, PostgreSQL (pgvector), Scikit-Learn IsolationForest anomaly detection, and XAI grounded RAG.
+
+🌐 **Live Demo:** [https://ai-finguard.netlify.app/](https://ai-finguard.netlify.app/)  
+📦 **GitHub Repository:** [https://github.com/anjaliprasad24/FinGuard-AI](https://github.com/anjaliprasad24/FinGuard-AI)
+
+---
 
 ## Tech Stack
 - **Frontend:** Next.js 14 (App Router), TypeScript, Tailwind CSS, Recharts, Lucide Icons
@@ -8,6 +16,8 @@ Production-ready autonomous AI Finance Controller & Copilot system built with Fa
 - **Analytics & ML:** Scikit-Learn (IsolationForest), Statsmodels/Pandas/NumPy
 - **OCR & PII:** Tesseract (pytesseract), Regex PII Masker
 - **Database & Vector Store:** PostgreSQL 16 + pgvector (or local SQLite)
+
+---
 
 ## System Architecture
 
@@ -41,8 +51,10 @@ Production-ready autonomous AI Finance Controller & Copilot system built with Fa
              ▼
   ┌───────────────────────┐
   │ 7. Audit & Copilot    │ ──> Commit to SQL & trigger contextual LLM summary
-  └───────────────────────┘
+  └──────────┬────────────┘
 ```
+
+---
 
 ## Getting Started
 
