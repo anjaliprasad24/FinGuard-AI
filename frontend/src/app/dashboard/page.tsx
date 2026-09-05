@@ -24,7 +24,6 @@ export default function DashboardPage() {
       if (data && data.length > 0) {
         setTransactions(data);
       } else {
-        // Sample default transactions for rich initial presentation
         setTransactions([
           {
             id: "tx-1",
@@ -95,6 +94,15 @@ export default function DashboardPage() {
     }
   };
 
+  const handleDeleteTransaction = async (id: string) => {
+    try {
+      await api.deleteTransaction(id);
+    } catch (err) {
+      // Deleting local state even if offline demo
+    }
+    setTransactions((prev) => prev.filter((t) => t.id !== id));
+  };
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -133,7 +141,11 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <TransactionFeed transactions={transactions} onIngestClick={() => setShowIngestModal(true)} />
+      <TransactionFeed
+        transactions={transactions}
+        onIngestClick={() => setShowIngestModal(true)}
+        onDeleteClick={handleDeleteTransaction}
+      />
 
       {/* Ingest Modal */}
       {showIngestModal && (

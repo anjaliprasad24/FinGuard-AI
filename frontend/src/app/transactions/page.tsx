@@ -32,7 +32,6 @@ export default function TransactionsPage() {
     try {
       const res = await api.uploadOCR(selectedFile);
       setOcrResult(res.extracted_data);
-      // Automatically ingest extracted transaction
       const ext = res.extracted_data;
       const ingestRes = await api.ingestTransaction({
         raw_merchant: ext.raw_text || ext.merchant,
@@ -45,6 +44,15 @@ export default function TransactionsPage() {
     } finally {
       setUploading(false);
     }
+  };
+
+  const handleDeleteTransaction = async (id: string) => {
+    try {
+      await api.deleteTransaction(id);
+    } catch (err) {
+      // Fallback local deletion
+    }
+    setTransactions((prev) => prev.filter((t) => t.id !== id));
   };
 
   return (
@@ -79,7 +87,7 @@ export default function TransactionsPage() {
         ))}
       </div>
 
-      <TransactionFeed transactions={transactions} />
+      <TransactionFeed transactions={transactions} onDeleteClick={handleDeleteTransaction} />
 
       {/* OCR Modal */}
       {showOCRModal && (

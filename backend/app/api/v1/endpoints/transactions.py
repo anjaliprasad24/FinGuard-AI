@@ -5,7 +5,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from app.core.database import get_db
-from app.core.security import get_current_user_id
+from app.core.security import get_current_user_id, hash_password
 from app.models.user import User
 from app.models.transaction import Transaction
 from app.models.policy import BudgetPolicy
@@ -19,12 +19,30 @@ from app.services.audit_logger import AuditLogger
 router = APIRouter()
 
 
+def _ensure_user(db: Session, user_id: str) -> User:
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        user = User(
+            id=user_id,
+            email=f"{user_id}@aifinancecontroller.io",
+            hashed_password=hash_password("demo1234"),
+            risk_tolerance="MODERATE",
+            min_reserve_threshold=10000.00
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    return user
+
+
 @router.post("/ingest", response_model=TransactionIngestResponse)
 def ingest_transaction(
     req: TransactionIngestRequest,
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db)
 ):
+    user = _ensure_user(db, user_id)
+
     # Step 1: PII Scrubber
     scrubbed_merchant = PIIScrubber.scrub(req.raw_merchant)
 
@@ -36,9 +54,7 @@ def ingest_transaction(
     else:
         clean_merchant, category, confidence = MerchantClassifier.classify(scrubbed_merchant)
 
-    # Fetch User & Historical transactions for anomaly check
-    user = db.query(User).filter(User.id == user_id).first()
-    min_reserve = user.min_reserve_threshold if user else 10000.00
+    min_reserve = user.min_reserve_threshold or 10000.00
 
     past_txns = db.query(Transaction).filter(
         Transaction.user_id == user_id,
@@ -66,7 +82,7 @@ def ingest_transaction(
         Transaction.transaction_type == "EXPENSE"
     ).all()
     total_spent = sum(t.amount for t in all_expenses)
-    current_balance = 50000.0 - total_spent  # Baseline virtual account balance
+    current_balance = 50000.0 - total_spent
 
     policy_breached, policy_warning, policy_evidence = PolicyController.evaluate_transaction(
         category=category,
@@ -79,7 +95,6 @@ def ingest_transaction(
         projected_monthly_spend=total_spent * 1.1
     )
 
-    # Combine evidence pack
     full_evidence = {
         **evidence_payload,
         "policy": policy_evidence,
@@ -108,7 +123,7 @@ def ingest_transaction(
     db.commit()
     db.refresh(txn)
 
-    # Step 6: Log Audit Trail if anomaly or breach occurred
+    # Step 6: Log Audit Trail
     if is_anomaly or policy_breached or policy_warning:
         event_type = "ANOMALY_FLAGGED" if is_anomaly else "POLICY_BREACH"
         AuditLogger.log_event(
@@ -143,3 +158,22 @@ def list_transactions(
     if category:
         query = query.filter(Transaction.category == category)
     return query.order_by(Transaction.transaction_date.desc()).limit(limit).all()
+
+
+@router.delete("/{transaction_id}")
+def delete_transaction(
+    transaction_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db)
+):
+    txn = db.query(Transaction).filter(
+        Transaction.id == transaction_id,
+        Transaction.user_id == user_id
+    ).first()
+
+    if not txn:
+        raise HTTPException(status_code=404, detail="Transaction not found.")
+
+    db.delete(txn)
+    db.commit()
+    return {"message": "Transaction deleted successfully", "id": transaction_id}

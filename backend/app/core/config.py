@@ -6,7 +6,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     APP_NAME: str = "AI Finance Controller API"
     ENVIRONMENT: str = "development"
-    DATABASE_URL: str = "sqlite:///./ephemeral.db"
+    DATABASE_URL: str = "sqlite:///./aifinance.db"
     SECRET_KEY: str = "super-secret-finance-controller-key-2026"
     OPENAI_API_KEY: str = ""
     GROQ_API_KEY: str = ""

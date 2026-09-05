@@ -43,6 +43,11 @@ export const api = {
     return res.data;
   },
 
+  async deleteTransaction(id: string): Promise<{ message: string; id: string }> {
+    const res = await apiClient.delete(`/transactions/${id}`);
+    return res.data;
+  },
+
   // OCR
   async uploadOCR(file: File): Promise<any> {
     const formData = new FormData();

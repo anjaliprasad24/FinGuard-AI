@@ -1,39 +1,51 @@
 "use client";
 
+import { useState } from "react";
 import { Transaction } from "@/lib/types";
-import { AlertCircle, CheckCircle2, ShieldAlert } from "lucide-react";
+import { AlertCircle, CheckCircle2, ShieldAlert, Trash2 } from "lucide-react";
 
 interface Props {
   transactions: Transaction[];
   onIngestClick?: () => void;
+  onDeleteClick?: (id: string) => void;
 }
 
-export default function TransactionFeed({ transactions, onIngestClick }: Props) {
+export default function TransactionFeed({ transactions, onIngestClick, onDeleteClick }: Props) {
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
   const getRiskBadge = (risk: string) => {
     switch (risk) {
       case "CRITICAL":
       case "HIGH":
         return (
-          <span className="flex items-center space-x-1 text-xs bg-rose-500/20 text-rose-400 px-2 py-0.5 rounded border border-rose-500/30">
+          <span className="flex items-center space-x-1 text-xs bg-rose-500/20 text-rose-400 px-2 py-0.5 rounded border border-rose-500/30 font-semibold">
             <ShieldAlert className="w-3 h-3" />
             <span>{risk} RISK</span>
           </span>
         );
       case "MEDIUM":
         return (
-          <span className="flex items-center space-x-1 text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded border border-amber-500/30">
+          <span className="flex items-center space-x-1 text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded border border-amber-500/30 font-semibold">
             <AlertCircle className="w-3 h-3" />
             <span>MEDIUM RISK</span>
           </span>
         );
       default:
         return (
-          <span className="flex items-center space-x-1 text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded border border-slate-700">
+          <span className="flex items-center space-x-1 text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded border border-slate-700 font-semibold">
             <CheckCircle2 className="w-3 h-3 text-emerald-400" />
             <span>CLEARED</span>
           </span>
         );
     }
+  };
+
+  const handleDelete = async (id: string) => {
+    setDeletingId(id);
+    if (onDeleteClick) {
+      await onDeleteClick(id);
+    }
+    setDeletingId(null);
   };
 
   return (
@@ -58,7 +70,7 @@ export default function TransactionFeed({ transactions, onIngestClick }: Props) 
       ) : (
         <div className="divide-y divide-slate-800/80 overflow-x-auto">
           {transactions.map((t) => (
-            <div key={t.id} className="py-3.5 flex items-center justify-between hover:bg-slate-800/30 px-2 rounded-lg transition">
+            <div key={t.id} className="py-3.5 flex items-center justify-between hover:bg-slate-800/30 px-2 rounded-lg transition group">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center font-bold text-slate-300 text-xs">
                   {t.category.slice(0, 2).toUpperCase()}
@@ -75,11 +87,22 @@ export default function TransactionFeed({ transactions, onIngestClick }: Props) 
                 </div>
               </div>
 
-              <div className="text-right">
-                <div className="font-bold text-slate-100 text-sm font-mono">
-                  {t.transaction_type === 'EXPENSE' ? '-' : '+'}₹{t.amount.toLocaleString('en-IN')}
+              <div className="flex items-center space-x-4">
+                <div className="text-right">
+                  <div className="font-bold text-slate-100 text-sm font-mono">
+                    {t.transaction_type === 'EXPENSE' ? '-' : '+'}₹{t.amount.toLocaleString('en-IN')}
+                  </div>
+                  <div className="mt-1 flex justify-end">{getRiskBadge(t.risk_level)}</div>
                 </div>
-                <div className="mt-1 flex justify-end">{getRiskBadge(t.risk_level)}</div>
+
+                <button
+                  onClick={() => handleDelete(t.id)}
+                  disabled={deletingId === t.id}
+                  title="Delete Transaction"
+                  className="text-slate-500 hover:text-rose-400 p-2 rounded-lg hover:bg-rose-500/10 opacity-70 group-hover:opacity-100 transition"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
               </div>
             </div>
           ))}

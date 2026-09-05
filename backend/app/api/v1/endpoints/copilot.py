@@ -5,7 +5,7 @@ from typing import List, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.database import get_db
-from app.core.security import get_current_user_id
+from app.core.security import get_current_user_id, hash_password
 from app.models.user import User
 from app.models.policy import BudgetPolicy
 from app.models.goal import FinancialGoal
@@ -19,16 +19,31 @@ from app.services.audit_logger import AuditLogger
 router = APIRouter()
 
 
+def _ensure_user(db: Session, user_id: str) -> User:
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        user = User(
+            id=user_id,
+            email=f"{user_id}@aifinancecontroller.io",
+            hashed_password=hash_password("demo1234"),
+            risk_tolerance="MODERATE",
+            min_reserve_threshold=10000.00
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    return user
+
+
 @router.post("/simulate", response_model=SimulationResponse)
 def simulate_purchase(
     req: SimulationRequest,
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db)
 ):
-    user = db.query(User).filter(User.id == user_id).first()
-    min_reserve = user.min_reserve_threshold if user else 10000.00
+    user = _ensure_user(db, user_id)
+    min_reserve = user.min_reserve_threshold or 10000.00
 
-    # Fetch policy for category
     policy = db.query(BudgetPolicy).filter(
         BudgetPolicy.user_id == user_id,
         BudgetPolicy.category == req.category
@@ -36,7 +51,6 @@ def simulate_purchase(
     monthly_limit = policy.monthly_limit if policy else None
     hard_cap = policy.hard_cap if policy else False
 
-    # Current category spend
     txns = db.query(Transaction).filter(
         Transaction.user_id == user_id,
         Transaction.category == req.category,
@@ -44,7 +58,6 @@ def simulate_purchase(
     ).all()
     current_spend = sum(t.amount for t in txns)
 
-    # Current user balance
     all_expenses = db.query(Transaction).filter(
         Transaction.user_id == user_id,
         Transaction.transaction_type == "EXPENSE"
@@ -63,7 +76,6 @@ def simulate_purchase(
         projected_monthly_spend=total_spent * 1.1
     )
 
-    # Calculate impacted goals
     goals = db.query(FinancialGoal).filter(FinancialGoal.user_id == user_id).all()
     impacted_goals = []
     deficit = max(0.0, (current_spend + req.amount) - (monthly_limit or 999999))
@@ -88,7 +100,6 @@ def simulate_purchase(
         f"Purchase of ₹{req.amount:,.2f} in '{req.category}' is feasible. Projected month-end balance will be ₹{evidence['projected_eom_balance']:,.2f}."
     )
 
-    # Log audit event
     AuditLogger.log_event(
         db=db,
         user_id=user_id,
@@ -120,7 +131,7 @@ async def copilot_chat(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db)
 ):
-    # Retrieve context: recent transactions, budget violations, active goals
+    _ensure_user(db, user_id)
     recent_txns = db.query(Transaction).filter(
         Transaction.user_id == user_id
     ).order_by(Transaction.transaction_date.desc()).limit(10).all()
@@ -143,7 +154,6 @@ async def copilot_chat(
 
     result = await CopilotRAG.generate_explanation(req.query, context)
 
-    # Log audit
     AuditLogger.log_event(
         db=db,
         user_id=user_id,

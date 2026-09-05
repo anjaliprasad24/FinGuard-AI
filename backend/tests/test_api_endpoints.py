@@ -27,6 +27,20 @@ def test_transaction_ingest_pipeline():
     assert "evidence_payload" in data
 
 
+def test_transaction_delete():
+    payload = {
+        "raw_merchant": "TEST DELETE VENDOR",
+        "amount": 500.0,
+        "category": "Dining & Food"
+    }
+    res = client.post("/api/v1/transactions/ingest", json=payload)
+    txn_id = res.json()["transaction"]["id"]
+
+    del_res = client.delete(f"/api/v1/transactions/{txn_id}")
+    assert del_res.status_code == 200
+    assert del_res.json()["id"] == txn_id
+
+
 def test_copilot_simulate():
     payload = {
         "amount": 20000.0,
