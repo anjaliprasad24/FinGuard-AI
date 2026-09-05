@@ -16,6 +16,7 @@ export default function DashboardPage() {
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("Electronics");
   const [ingesting, setIngesting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const loadData = async () => {
     try {
@@ -74,6 +75,8 @@ export default function DashboardPage() {
     e.preventDefault();
     if (!rawText || !amount) return;
     setIngesting(true);
+    setErrorMessage("");
+
     try {
       const res = await api.ingestTransaction({
         raw_merchant: rawText,
@@ -84,8 +87,9 @@ export default function DashboardPage() {
       setShowIngestModal(false);
       setRawText("");
       setAmount("");
-    } catch (err) {
-      alert("Failed to ingest transaction");
+    } catch (err: any) {
+      const detail = err.response?.data?.detail || err.message || "Cannot connect to backend server at http://localhost:8000";
+      setErrorMessage(`Failed to ingest: ${detail}. Please ensure backend server is running on port 8000.`);
     } finally {
       setIngesting(false);
     }
@@ -106,7 +110,10 @@ export default function DashboardPage() {
             <RefreshCw className="w-4 h-4" />
           </button>
           <button
-            onClick={() => setShowIngestModal(true)}
+            onClick={() => {
+              setShowIngestModal(true);
+              setErrorMessage("");
+            }}
             className="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-4 py-2.5 rounded-lg shadow-lg shadow-blue-500/20 flex items-center space-x-2 text-sm transition"
           >
             <Plus className="w-4 h-4" />
@@ -133,7 +140,13 @@ export default function DashboardPage() {
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl">
             <h3 className="text-lg font-bold text-white mb-1">Ingest Raw Transaction</h3>
-            <p className="text-xs text-slate-400 mb-4">Pipeline applies PII Scrubbing $\rightarrow$ Classification $\rightarrow$ IsolationForest Anomaly Check</p>
+            <p className="text-xs text-slate-400 mb-4">Pipeline applies PII Scrubbing → Classification → IsolationForest Anomaly Check</p>
+
+            {errorMessage && (
+              <div className="mb-4 bg-rose-500/20 border border-rose-500/40 text-rose-300 p-3 rounded-lg text-xs leading-relaxed">
+                {errorMessage}
+              </div>
+            )}
 
             <form onSubmit={handleIngest} className="space-y-4">
               <div>
