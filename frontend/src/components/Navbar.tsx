@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Receipt, ShieldAlert, TrendingUp, Target, Bot, FileText, Lock } from "lucide-react";
+import { LayoutDashboard, Receipt, ShieldAlert, TrendingUp, Target, Bot, FileText } from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -22,12 +22,14 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center space-x-3">
-            <div className="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/30">
-              FC
+            <div className="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/30 shrink-0">
+              FG
             </div>
-            <div>
-              <span className="font-bold text-lg tracking-wide text-white">AI Finance Controller</span>
-              <span className="ml-2 text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full border border-blue-500/30">v1.0 XAI Engine</span>
+            <div className="flex items-center space-x-2.5">
+              <span className="font-bold text-lg tracking-wide text-white whitespace-nowrap">FinGuard AI</span>
+              <span className="text-[11px] bg-blue-500/20 text-blue-400 px-2.5 py-0.5 rounded-full border border-blue-500/30 whitespace-nowrap font-medium">
+                v1.0 XAI
+              </span>
             </div>
           </div>
 
