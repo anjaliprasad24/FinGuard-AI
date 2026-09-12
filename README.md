@@ -6,7 +6,6 @@
 Production-ready autonomous AI Finance Controller & Copilot system built with FastAPI, Next.js 14, PostgreSQL (pgvector), Scikit-Learn IsolationForest anomaly detection, and XAI grounded RAG.
 
 🌐 **Live Demo:** [https://ai-finguard.netlify.app/](https://ai-finguard.netlify.app/)  
-📦 **GitHub Repository:** [https://github.com/anjaliprasad24/FinGuard-AI](https://github.com/anjaliprasad24/FinGuard-AI)
 
 ---
 
